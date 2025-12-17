@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Raise Electrical Ticket - Maintenance Help Desk{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-0 pb-0 mb-3 border-bottom">
+    <h1 class="h2">Raise Electrical Ticket</h1>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <!-- Auto-fetch fields -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-user"></i> Requester Information
+                            </h5>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Name *</label>
+                                <input type="text" class="form-control" id="name" name="name" value="{{ current_user.name }}" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email *</label>
+                                <input type="email" class="form-control" id="email" name="email" value="{{ current_user.email }}" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="employee_id" class="form-label">Employee ID *</label>
+                                <input type="text" class="form-control" id="employee_id" name="employee_id" value="{{ current_user.employee_id }}" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="department" class="form-label">Department *</label>
+                                <input type="text" class="form-control" id="department" name="department" value="{{ current_user.department }}" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="unit" class="form-label">Unit *</label>
+                                <input type="text" class="form-control" id="unit" name="unit" value="{{ current_user.unit }}" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="created_date_time" class="form-label">Created Date Time *</label>
+                                <input type="datetime-local" class="form-control" id="created_date_time" name="created_date_time" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <!-- Ticket details -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-bolt"></i> Electrical Ticket Details
+                            </h5>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="equipment_name" class="form-label">Equipment Name *</label>
+                        <select class="form-select" id="equipment_name" name="equipment_name" required>
+                            <option value="">Select Equipment</option>
+                            {% for equipment in electrical_equipment %}
+                                <option value="{{ equipment.equipment_name }}">{{ equipment.equipment_name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Available equipment for {{ current_user.unit }}</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="issue_description" class="form-label">Issue Description *</label>
+                        <textarea class="form-control" id="issue_description" name="issue_description" rows="5" required></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="priority" class="form-label">Priority *</label>
+                        <select class="form-select" id="priority" name="priority" required>
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('mrwr.dashboard') }}" class="btn btn-secondary me-md-2">Cancel</a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-paper-plane"></i> Submit Ticket
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-fill the created date time field
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    
+    const dateTimeString = `${year}-${month}-${day}T${hours}:${minutes}`;
+    document.getElementById('created_date_time').value = dateTimeString;
+});
+</script>
+{% endblock %}

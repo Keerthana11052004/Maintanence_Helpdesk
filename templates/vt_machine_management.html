@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block title %}VT Machine Number Management - Maintenance Help Desk{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-0 pb-0 mb-3 border-bottom">
+    <h1 class="h2">VT Machine Number Management</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addMachineModal">
+                <i class="fas fa-plus"></i> Add VT Machine Number
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-cogs"></i> VT Machine Numbers by Unit
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    Manage VT machine numbers for each unit. These numbers will appear in the dropdown when raising production tickets.
+                </p>
+                
+                {% if vt_machines %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Machine Number</th>
+                                <th>Unit</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Last Updated</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for machine in vt_machines %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-primary">{{ machine.machine_number }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ machine.unit }}</span>
+                                </td>
+                                <td>{{ machine.description or 'No description' }}</td>
+                                <td>
+                                    {% if machine.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ machine.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                data-bs-toggle="modal" data-bs-target="#editMachineModal{{ machine.id }}"
+                                                title="Edit Machine Number">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                data-bs-toggle="modal" data-bs-target="#deleteMachineModal{{ machine.id }}"
+                                                title="Delete Machine Number">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            
+                            <!-- Edit Modal -->
+                            <div class="modal fade" id="editMachineModal{{ machine.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Edit VT Machine Number - {{ machine.machine_number }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form method="POST" action="{{ url_for('mrwr.update_vt_machine', machine_id=machine.id) }}">
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <label for="machine_number{{ machine.id }}" class="form-label">Machine Number *</label>
+                                                    <input type="text" class="form-control" id="machine_number{{ machine.id }}" 
+                                                           name="machine_number" value="{{ machine.machine_number }}" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="unit{{ machine.id }}" class="form-label">Unit *</label>
+                                                    <select class="form-select" id="unit{{ machine.id }}" name="unit" required>
+                                                        <option value="">Select Unit</option>
+                                                        <option value="Unit-1" {% if machine.unit == 'Unit-1' %}selected{% endif %}>Unit-1</option>
+                                                        <option value="Unit-2" {% if machine.unit == 'Unit-2' %}selected{% endif %}>Unit-2</option>
+                                                        <option value="Unit-3" {% if machine.unit == 'Unit-3' %}selected{% endif %}>Unit-3</option>
+                                                        <option value="Unit-4" {% if machine.unit == 'Unit-4' %}selected{% endif %}>Unit-4</option>
+                                                        <option value="Unit-5" {% if machine.unit == 'Unit-5' %}selected{% endif %}>Unit-5</option>
+                                                        <option value="GSS" {% if machine.unit == 'GSS' %}selected{% endif %}>GSS</option>
+                                                    </select>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="description{{ machine.id }}" class="form-label">Description</label>
+                                                    <textarea class="form-control" id="description{{ machine.id }}" 
+                                                              name="description" rows="3" placeholder="Optional description...">{{ machine.description or '' }}</textarea>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="is_active{{ machine.id }}" 
+                                                               name="is_active" {% if machine.is_active %}checked{% endif %}>
+                                                        <label class="form-check-label" for="is_active{{ machine.id }}">
+                                                            Active (Available in dropdown)
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-primary">Update Machine Number</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Delete Modal -->
+                            <div class="modal fade" id="deleteMachineModal{{ machine.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Delete VT Machine Number</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="alert alert-warning">
+                                                <i class="fas fa-exclamation-triangle"></i>
+                                                <strong>Warning!</strong> This action cannot be undone.
+                                            </div>
+                                            <p>Are you sure you want to delete this VT machine number?</p>
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">Machine Details:</h6>
+                                                    <p><strong>Machine Number:</strong> {{ machine.machine_number }}</p>
+                                                    <p><strong>Unit:</strong> {{ machine.unit }}</p>
+                                                    <p><strong>Description:</strong> {{ machine.description or 'No description' }}</p>
+                                                    <p><strong>Status:</strong> {{ 'Active' if machine.is_active else 'Inactive' }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form method="POST" action="{{ url_for('mrwr.delete_vt_machine', machine_id=machine.id) }}" style="display: inline;">
+                                                <button type="submit" class="btn btn-danger">
+                                                    <i class="fas fa-trash"></i> Delete Machine Number
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-cogs fa-5x text-muted mb-3"></i>
+                    <h3 class="text-muted">No VT Machine Numbers</h3>
+                    <p class="text-muted">No VT machine numbers found. Add machine numbers to start using them in production tickets.</p>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addMachineModal">
+                        <i class="fas fa-plus"></i> Add First Machine Number
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Machine Modal -->
+<div class="modal fade" id="addMachineModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add VT Machine Number</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('mrwr.add_vt_machine') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="machine_number" class="form-label">Machine Number *</label>
+                        <input type="text" class="form-control" id="machine_number" name="machine_number" 
+                               placeholder="e.g., VT-001, VT-002" required>
+                        <div class="form-text">Enter the VT machine number (e.g., VT-001, VT-002)</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="unit" class="form-label">Unit *</label>
+                        <select class="form-select" id="unit" name="unit" required>
+                            <option value="">Select Unit</option>
+                            <option value="Unit-1">Unit-1</option>
+                            <option value="Unit-2">Unit-2</option>
+                            <option value="Unit-3">Unit-3</option>
+                            <option value="Unit-4">Unit-4</option>
+                            <option value="Unit-5">Unit-5</option>
+                            <option value="GSS">GSS</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" 
+                                  placeholder="Optional description of the machine..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                            <label class="form-check-label" for="is_active">
+                                Active (Available in dropdown)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Machine Number</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Machine number validation
+    const machineNumberInputs = document.querySelectorAll('input[name="machine_number"]');
+    
+    machineNumberInputs.forEach(function(input) {
+        input.addEventListener('blur', function() {
+            const value = this.value.trim();
+            if (value && !/^VT-\d{3}$/i.test(value)) {
+                this.classList.add('is-invalid');
+                if (!this.nextElementSibling || !this.nextElementSibling.classList.contains('invalid-feedback')) {
+                    const feedback = document.createElement('div');
+                    feedback.className = 'invalid-feedback';
+                    feedback.textContent = 'Please enter a valid VT machine number (e.g., VT-001)';
+                    this.parentNode.appendChild(feedback);
+                }
+            } else {
+                this.classList.remove('is-invalid');
+                const feedback = this.parentNode.querySelector('.invalid-feedback');
+                if (feedback) {
+                    feedback.remove();
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+
+
+
+
+

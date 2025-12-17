@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Manager Dashboard - Maintenance Help Desk{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-0 pb-0 mb-3 border-bottom">
+    <h1 class="h2">Manager Dashboard</h1>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">Production Machine Tickets</h5>
+                        <h2 class="mb-0">{{ total_production }}</h2>
+                        <small>Open: {{ open_production }} | In Progress: {{ in_progress_production }}</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-industry fa-3x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('mrwr.manager_production') }}" class="text-white text-decoration-none">
+                    Manage All <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">Electrical Tickets</h5>
+                        <h2 class="mb-0">{{ total_electrical }}</h2>
+                        <small>Open: {{ open_electrical }} | In Progress: {{ in_progress_electrical }}</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-bolt fa-3x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('mrwr.manager_electrical') }}" class="text-white text-decoration-none">
+                    Manage All <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-industry fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">Production Machines</h5>
+                <p class="card-text">Manage all production machine tickets</p>
+                <a href="{{ url_for('mrwr.manager_production') }}" class="btn btn-primary">
+                    <i class="fas fa-cog"></i> Manage
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-bolt fa-3x text-success mb-3"></i>
+                <h5 class="card-title">Electrical</h5>
+                <p class="card-text">Manage all electrical tickets</p>
+                <a href="{{ url_for('mrwr.manager_electrical') }}" class="btn btn-success">
+                    <i class="fas fa-cog"></i> Manage
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    {% if current_user.role == 'super_manager' %}
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-users fa-3x text-info mb-3"></i>
+                <h5 class="card-title">User Management</h5>
+                <p class="card-text">Manage & Add Users</p>
+                <a href="{{ url_for('mrwr.add_user') }}" class="btn btn-info">
+                    <i class="fas fa-users"></i> User Management
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+</div>
+{% endblock %}

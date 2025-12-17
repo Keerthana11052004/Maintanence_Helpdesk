@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Electrical Ticket - Maintenance Help Desk{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-0 pb-0 mb-3 border-bottom">
+    <h1 class="h2">Edit Electrical Ticket #{{ ticket.id }}</h1>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="equipment_name" class="form-label">Equipment Name *</label>
+                        <input type="text" class="form-control" id="equipment_name" name="equipment_name" value="{{ ticket.equipment_name }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="issue_description" class="form-label">Issue Description *</label>
+                        <textarea class="form-control" id="issue_description" name="issue_description" rows="5" required>{{ ticket.issue_description }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="priority" class="form-label">Priority *</label>
+                        <select class="form-select" id="priority" name="priority" required>
+                            <option value="low" {% if ticket.priority == 'low' %}selected{% endif %}>Low</option>
+                            <option value="medium" {% if ticket.priority == 'medium' %}selected{% endif %}>Medium</option>
+                            <option value="high" {% if ticket.priority == 'high' %}selected{% endif %}>High</option>
+                        </select>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('mrwr.my_electrical_tickets') }}" class="btn btn-secondary me-md-2">Cancel</a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Update Ticket
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+
+{% block title %}My Electrical Tickets - Maintenance Help Desk{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-0 pb-0 mb-0 border-bottom">
+    <h1 class="h2">My Electrical Tickets</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+            <i class="fas fa-filter"></i> Filter Tickets
+        </button>
+    </div>
+</div>
+
+<div class="collapse mb-3" id="filterCollapse">
+    <div class="card card-body">
+        <h5 class="card-title">Filter by Status</h5>
+        <form method="GET" action="{{ url_for('mrwr.my_electrical_tickets') }}">
+            <div class="mb-3">
+                <label for="statusFilter" class="form-label">Ticket Status:</label>
+                <select class="form-select" id="statusFilter" name="status" onchange="this.form.submit()">
+                    <option value="all" {% if current_filter == 'all' %}selected{% endif %}>All</option>
+                    <option value="open" {% if current_filter == 'open' %}selected{% endif %}>Open</option>
+                    <option value="inprogress" {% if current_filter == 'inprogress' %}selected{% endif %}>In Progress</option>
+                    <option value="approved" {% if current_filter == 'approved' %}selected{% endif %}>Approved</option>
+                    <option value="resolved" {% if current_filter == 'resolved' %}selected{% endif %}>Resolved</option>
+                    <option value="not_resolved" {% if current_filter == 'not_resolved' %}selected{% endif %}>Not Resolved</option>
+                    <option value="closed" {% if current_filter == 'closed' %}selected{% endif %}>Closed</option>
+                    <option value="reopened" {% if current_filter == 'reopened' %}selected{% endif %}>Reopened</option>
+                </select>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if tickets_with_history %}
+<style>
+    .table th, .table td {
+        white-space: nowrap; /* Prevent text wrapping */
+        overflow: hidden;    /* Hide overflowing content */
+        text-overflow: ellipsis; /* Add ellipsis for truncated text */
+    }
+    /* Set minimum widths for columns to ensure content visibility */
+    .table th:nth-child(1), .table td:nth-child(1) { min-width: 80px; }  /* Ticket ID */
+    .table th:nth-child(2), .table td:nth-child(2) { min-width: 120px; }  /* Employee ID */
+    .table th:nth-child(3), .table td:nth-child(3) { min-width: 150px; }  /* Department */
+    .table th:nth-child(4), .table td:nth-child(4) { min-width: 150px; }  /* Equipment Name */
+    .table th:nth-child(5), .table td:nth-child(5) { min-width: 200px; }  /* Issue Description */
+    .table th:nth-child(6), .table td:nth-child(6) { min-width: 100px; }  /* Priority */
+    .table th:nth-child(7), .table td:nth-child(7) { min-width: 120px; }  /* Status */
+    .table th:nth-child(8), .table td:nth-child(8) { min-width: 150px; }  /* Created Date */
+    .table th:nth-child(9), .table td:nth-child(9) { min-width: 180px; }  /* Approver Mail */
+    .table th:nth-child(10), .table td:nth-child(10) { min-width: 180px; } /* Approved Date Time */
+    .table th:nth-child(11), .table td:nth-child(11) { min-width: 200px; } /* Resolved Reason */
+    .table th:nth-child(12), .table td:nth-child(12) { min-width: 180px; } /* Ticket Closed Date and Time */
+    .table th:nth-child(12), .table td:nth-child(12) { min-width: 180px; } /* Ticket Closed Date and Time */
+</style>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Ticket ID</th>
+                <th>Employee ID</th>
+                <th>Department</th>
+                <th>Equipment Name</th>
+                <th>Issue Description</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Created Date</th>
+                <th>Approver Mail</th>
+                <th>Approved Date Time</th>
+                <th>Resolved Reason</th>
+                <th>Ticket Closed Date and Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ticket, history in tickets_with_history %}
+            <tr>
+                <td>
+                    <button type="button" class="btn btn-link p-0 text-decoration-none"
+                            data-bs-toggle="modal"
+                            data-bs-target="#electricalTicketModal{{ ticket.id }}"
+                            style="color: #0d6efd; font-weight: bold;">
+                        #{{ ticket.id }}
+                    </button>
+                </td>
+                <td>
+                    <span class="badge bg-secondary">{{ ticket.employee_id or 'N/A' }}</span>
+                </td>
+                <td>
+                    <span class="badge bg-warning">{{ ticket.department or 'N/A' }}</span>
+                </td>
+                <td>{{ ticket.equipment_name }}</td>
+                <td>{{ ticket.issue_description[:50] }}{% if ticket.issue_description|length > 50 %}...{% endif %}</td>
+                <td>
+                    <span class="badge bg-{% if ticket.priority == 'high' %}danger{% elif ticket.priority == 'medium' %}warning{% else %}info{% endif %}">
+                        {{ ticket.priority.title() }}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge bg-{% if ticket.status == 'open' %}success{% elif ticket.status == 'in_progress' %}warning{% elif ticket.status == 'resolved' %}primary{% elif ticket.status == 'not_resolved' %}warning{% elif ticket.status == 'reopened' %}danger{% elif ticket.status == 'pending' %}info{% elif ticket.status == 'closed' %}primary text-dark{% elif ticket.status == 'hold' %}secondary{% elif ticket.status == 'approved' %}success{% else %}secondary text-dark{% endif %}">
+                        {{ ticket.status.replace('_', ' ').title() }}
+                    </span>
+                </td>
+                <td>{{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>{{ ticket.approver_mail or 'N/A' }}</td>
+                <td>{{ ticket.approved_date_time.strftime('%Y-%m-%d %H:%M') if ticket.approved_date_time else 'N/A' }}</td>
+                <td>{{ ticket.resolved_reason or 'N/A' }}</td>
+                <td>{{ ticket.closed_date_time.strftime('%Y-%m-%d %H:%M') if ticket.closed_date_time else 'N/A' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if pagination.pages > 1 %}
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('mrwr.my_electrical_tickets', status=current_filter, page=pagination.prev_num) }}" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+        {% for page_num in pagination.iter_pages() %}
+            {% if page_num %}
+                {% if page_num == pagination.page %}
+                <li class="page-item active"><a class="page-link" href="#">{{ page_num }}</a></li>
+                {% else %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('mrwr.my_electrical_tickets', status=current_filter, page=page_num) }}">{{ page_num }}</a></li>
+                {% endif %}
+            {% else %}
+            <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
+            {% endif %}
+        {% endfor %}
+        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('mrwr.my_electrical_tickets', status=current_filter, page=pagination.next_num) }}" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="text-center py-5">
+    <i class="fas fa-bolt fa-5x text-muted mb-3"></i>
+    <h3 class="text-muted">No Electrical Tickets</h3>
+    <p class="text-muted">You haven't raised any electrical tickets yet.</p>
+    <a href="{{ url_for('mrwr.raise_electrical_ticket') }}" class="btn btn-success">
+        <i class="fas fa-plus"></i> Raise Your First Ticket
+    </a>
+</div>
+{% endif %}
+
+<!-- Electrical Ticket Detail Modals -->
+{% for ticket, history in tickets_with_history %}
+<div class="modal fade" id="electricalTicketModal{{ ticket.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-bolt"></i> Electrical Ticket Details - #{{ ticket.id }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Employee ID:</label>
+                            <span class="badge bg-secondary">{{ ticket.employee_id or 'N/A' }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Department:</label>
+                            <span class="badge bg-warning">{{ ticket.department or 'N/A' }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Unit:</label>
+                            <span class="badge bg-info">{{ ticket.unit or 'N/A' }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Equipment Name:</label>
+                            <p class="mb-0">{{ ticket.equipment_name }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Priority:</label>
+                            <span class="badge bg-{% if ticket.priority == 'high' %}danger{% elif ticket.priority == 'medium' %}warning{% else %}info{% endif %}">
+                                {{ ticket.priority.title() }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Status:</label>
+                            <span class="badge bg-{% if ticket.status == 'open' %}success{% elif ticket.status == 'inprogress' %}warning{% elif ticket.status == 'resolved' %}primary{% elif ticket.status == 'not_resolved' %}warning{% elif ticket.status == 'reopened' %}danger{% elif ticket.status == 'pending' %}info{% elif ticket.status == 'closed' %}primary text-dark{% elif ticket.status == 'hold' %}secondary{% elif ticket.status == 'approved' %}success{% else %}secondary text-dark{% endif %}">
+                                {{ ticket.status.replace('_', ' ').title() }}
+                            </span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Created Date:</label>
+                            <p class="mb-0">{{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Approver Mail:</label>
+                            <p class="mb-0">{{ ticket.approver_mail or 'Not Approved' }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Approved Date Time:</label>
+                            <p class="mb-0">{{ ticket.approved_date_time.strftime('%Y-%m-%d %H:%M') if ticket.approved_date_time else 'Not Approved' }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Ticket Closed Date and Time:</label>
+                            <p class="mb-0">{{ ticket.closed_date_time.strftime('%Y-%m-%d %H:%M') if ticket.closed_date_time else 'Not Closed' }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Issue Description:</label>
+                            <div class="border rounded p-3 bg-light">
+                                <p class="mb-0">{{ ticket.issue_description }}</p>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Resolved Reason:</label>
+                            <div class="border rounded p-3 bg-light">
+                                <p class="mb-0">{{ ticket.resolved_reason or 'Not Resolved' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Ticket History Section -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h6 class="fw-bold mb-3">
+                            <i class="fas fa-history"></i> Ticket History
+                        </h6>
+                        {% if history %}
+                            <div class="timeline">
+                                {% for entry in history %}
+                                <div class="timeline-item mb-3">
+                                    <div class="d-flex">
+                                        <div class="timeline-marker me-3">
+                                            {% if entry.action == 'created' %}
+                                                <i class="fas fa-plus-circle text-primary"></i>
+                                            {% elif entry.action == 'approved' %}
+                                                <i class="fas fa-check-circle text-success"></i>
+                                            {% elif entry.action == 'resolved' %}
+                                                <i class="fas fa-tools text-info"></i>
+                                            {% elif entry.action == 'reopened' %}
+                                                <i class="fas fa-undo text-warning"></i>
+                                            {% elif entry.action == 'closed' %}
+                                                <i class="fas fa-times-circle text-secondary"></i>
+                                            {% else %}
+                                                <i class="fas fa-circle text-muted"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="timeline-content flex-grow-1">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <strong>{{ entry.action.replace('_', ' ').title() }}</strong>
+                                                    <span class="text-muted">by {{ entry.performed_by_name }}</span>
+                                                </div>
+                                                <small class="text-muted">{{ entry.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+                                            </div>
+                                            {% if entry.reason %}
+                                                <div class="mt-1">
+                                                    <small class="text-muted">{{ entry.reason }}</small>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted">No history available for this ticket.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="d-flex gap-2 flex-wrap">
+                    {% if ticket.status == 'open' %}
+                    <a href="{{ url_for('mrwr.edit_electrical_ticket', ticket_id=ticket.id) }}" class="btn btn-sm btn-outline-success">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                    {% elif ticket.status == 'closed' and ticket.is_in_grace_period %}
+                    <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#reopenModal{{ ticket.id }}">
+                        <i class="fas fa-undo"></i> Reopen
+                    </button>
+                    {% else %}
+                    <span class="text-muted">No actions available</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Reopen Ticket Modals -->
+{% for ticket, history in tickets_with_history %}
+{% if ticket.status == 'closed' and ticket.is_in_grace_period %}
+<div class="modal fade" id="reopenModal{{ ticket.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reopen Electrical Ticket #{{ ticket.id }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('mrwr.user_reopen_electrical_ticket', ticket_id=ticket.id) }}" id="reopenForm{{ ticket.id }}">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        This ticket is in the 48-hour grace period and can be reopened.
+                    </div>
+                    <div class="mb-3">
+                        <label for="reopen_reason{{ ticket.id }}" class="form-label">Reason for Reopening *</label>
+                        <textarea class="form-control" id="reopen_reason{{ ticket.id }}" name="reopen_reason" rows="3" placeholder="Please provide a reason for reopening this ticket..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning" id="reopenBtn{{ ticket.id }}">
+                        <i class="fas fa-undo"></i> Reopen Ticket
+                    </button>
+                </div>
+            </form>
+            
+            <script>
+            document.getElementById('reopenBtn{{ ticket.id }}').addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Reopen button clicked for electrical ticket {{ ticket.id }}');
+                
+                const form = document.getElementById('reopenForm{{ ticket.id }}');
+                const reason = document.getElementById('reopen_reason{{ ticket.id }}').value.trim();
+                
+                if (!reason) {
+                    alert('Please provide a reason for reopening the ticket.');
+                    return;
+                }
+                
+                // Show processing state
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                this.disabled = true;
+                
+                // Submit the form
+                form.submit();
+            });
+            </script>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+{% endblock %}

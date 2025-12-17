@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}Electrical Equipment Management - Maintenance Help Desk{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-0 pb-0 mb-3 border-bottom">
+    <h1 class="h2">Electrical Equipment Management</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEquipmentModal">
+                <i class="fas fa-plus"></i> Add Electrical Equipment
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-bolt"></i> Electrical Equipment by Unit
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    Manage electrical equipment for each unit. These equipment names will be available for electrical ticket creation.
+                </p>
+                
+                {% if electrical_equipment %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Equipment Name</th>
+                                <th>Unit</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Last Updated</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for equipment in electrical_equipment %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-primary">{{ equipment.equipment_name }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ equipment.unit }}</span>
+                                </td>
+                                <td>
+                                    {% if equipment.description %}
+                                        {{ equipment.description }}
+                                    {% else %}
+                                        <span class="text-muted">No description</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if equipment.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ equipment.updated_at.strftime('%Y-%m-%d %H:%M') if equipment.updated_at else 'N/A' }}</small>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#editEquipmentModal{{ equipment.id }}"
+                                                title="Edit Equipment">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#deleteEquipmentModal{{ equipment.id }}"
+                                                title="Delete Equipment">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-bolt fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Electrical Equipment Found</h5>
+                    <p class="text-muted">Click "Add Electrical Equipment" to get started.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Equipment Modal -->
+<div class="modal fade" id="addEquipmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Electrical Equipment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('mrwr.add_electrical_equipment') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="equipment_name" class="form-label">Equipment Name *</label>
+                        <input type="text" class="form-control" id="equipment_name" name="equipment_name" required>
+                        <div class="form-text">e.g., Fan, Motor, Light, Switch, etc.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="unit" class="form-label">Unit *</label>
+                        <select class="form-select" id="unit" name="unit" required>
+                            <option value="">Select Unit</option>
+                            <option value="Unit-1">Unit-1</option>
+                            <option value="Unit-2">Unit-2</option>
+                            <option value="Unit-3">Unit-3</option>
+                            <option value="Unit-4">Unit-4</option>
+                            <option value="Unit-5">Unit-5</option>
+                            <option value="GSS">GSS</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" placeholder="Optional description of the equipment..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                            <label class="form-check-label" for="is_active">
+                                Active
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Equipment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Equipment Modals -->
+{% for equipment in electrical_equipment %}
+<div class="modal fade" id="editEquipmentModal{{ equipment.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Electrical Equipment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('mrwr.update_electrical_equipment', equipment_id=equipment.id) }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_equipment_name{{ equipment.id }}" class="form-label">Equipment Name *</label>
+                        <input type="text" class="form-control" id="edit_equipment_name{{ equipment.id }}" name="equipment_name" value="{{ equipment.equipment_name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_unit{{ equipment.id }}" class="form-label">Unit *</label>
+                        <select class="form-select" id="edit_unit{{ equipment.id }}" name="unit" required>
+                            <option value="Unit-1" {% if equipment.unit == 'Unit-1' %}selected{% endif %}>Unit-1</option>
+                            <option value="Unit-2" {% if equipment.unit == 'Unit-2' %}selected{% endif %}>Unit-2</option>
+                            <option value="Unit-3" {% if equipment.unit == 'Unit-3' %}selected{% endif %}>Unit-3</option>
+                            <option value="Unit-4" {% if equipment.unit == 'Unit-4' %}selected{% endif %}>Unit-4</option>
+                            <option value="Unit-5" {% if equipment.unit == 'Unit-5' %}selected{% endif %}>Unit-5</option>
+                            <option value="GSS" {% if equipment.unit == 'GSS' %}selected{% endif %}>GSS</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_description{{ equipment.id }}" class="form-label">Description</label>
+                        <textarea class="form-control" id="edit_description{{ equipment.id }}" name="description" rows="3">{{ equipment.description or '' }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="edit_is_active{{ equipment.id }}" name="is_active" {% if equipment.is_active %}checked{% endif %}>
+                            <label class="form-check-label" for="edit_is_active{{ equipment.id }}">
+                                Active
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Update Equipment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Delete Equipment Modals -->
+{% for equipment in electrical_equipment %}
+<div class="modal fade" id="deleteEquipmentModal{{ equipment.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Electrical Equipment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this electrical equipment?</p>
+                <div class="alert alert-warning">
+                    <strong>Equipment:</strong> {{ equipment.equipment_name }}<br>
+                    <strong>Unit:</strong> {{ equipment.unit }}
+                </div>
+                <p class="text-danger"><strong>This action cannot be undone!</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ url_for('mrwr.delete_electrical_equipment', equipment_id=equipment.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Delete Equipment
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}

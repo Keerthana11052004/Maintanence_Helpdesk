@@ -1,0 +1,997 @@
+{% extends "base.html" %}
+
+{% block title %}User Management - Maintenance Help Desk{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Email Validation Styles */
+.form-control.is-invalid {
+    border-color: #dc3545;
+    background-color: #fff5f5;
+}
+
+.form-control.is-valid {
+    border-color: #28a745;
+    background-color: #f0fff4;
+}
+
+.invalid-feedback {
+    display: block;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #dc3545;
+}
+
+.valid-feedback {
+    display: block;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #28a745;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Search Filter Styles */
+.search-filter-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.search-filter-card .card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px 8px 0 0;
+    transition: all 0.3s ease;
+}
+
+.search-filter-card .card-header:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.search-filter-card .card-header h6 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.search-filter-card .card-header[aria-expanded="true"] {
+    border-radius: 8px 8px 0 0;
+}
+
+.search-filter-card .card-header[aria-expanded="false"] {
+    border-radius: 8px;
+}
+
+#searchFilterIcon {
+    transition: transform 0.3s ease;
+    font-size: 0.9rem;
+}
+
+#searchFilterIcon.rotated {
+    transform: rotate(180deg);
+}
+
+.search-results-info {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border: 1px solid #2196f3;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-top: 16px;
+}
+
+.search-results-info i {
+    color: #1976d2;
+    margin-right: 8px;
+}
+
+.no-results-message {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    border: 1px solid #ff9800;
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.no-results-message i {
+    color: #f57c00;
+    margin-bottom: 16px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .search-filter-card .row > div {
+        margin-bottom: 15px;
+    }
+    
+    .search-filter-card .d-flex.gap-2 {
+        flex-direction: column;
+        gap: 8px !important;
+    }
+    
+    .search-filter-card .d-flex.gap-2 .btn {
+        width: 100%;
+    }
+}
+
+/* Search input focus styles */
+#searchInput:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* Search button hover effect */
+#searchBtn:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* Table styles for user list */
+.table th, .table td {
+    padding: 12px 15px;
+    vertical-align: middle;
+}
+.table th {
+    font-weight: 600;
+    font-size: 14px;
+}
+.table td {
+    font-size: 14px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-0 pb-0 mb-3 border-bottom">
+    <h1 class="h2">User Management</h1>
+    <button type="button" class="btn btn-primary" id="createUserBtn">
+        <i class="fas fa-user-plus"></i> Create Add New User
+    </button>
+</div>
+
+<!-- Add User Form -->
+<div class="mb-4 {% if show_add_user_form %}d-block{% else %}d-none{% endif %}" id="addUserForm">
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-user-plus"></i> Add New User
+            </h5>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="hideUserForm">
+                <i class="fas fa-times"></i> Hide Form
+            </button>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('mrwr.add_user') }}" class="needs-validation" novalidate id="addUserActualForm">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Full Name *</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email Address *</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                            <div class="invalid-feedback" id="emailError"></div>
+                            <div class="valid-feedback" id="emailSuccess"></div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="employee_id" class="form-label">Employee ID</label>
+                            <input type="text" class="form-control" id="employee_id" name="employee_id">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="department" class="form-label">Department</label>
+                            <input type="text" class="form-control" id="department" name="department">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password *</label>
+                            <input type="password" class="form-control" id="password" name="password" required autocomplete="new-password">
+                            <div class="invalid-feedback" id="passwordError"></div>
+                            <div class="valid-feedback" id="passwordSuccess"></div>
+                            <div class="form-text">
+                                <small class="text-muted">
+                                    <strong>Password Requirements:</strong><br>
+                                    • Minimum 8 characters<br>
+                                    • Must contain letters and numbers
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="unit" class="form-label">Unit/Department *</label>
+                            <select class="form-select" id="unit" name="unit" required>
+                                <option value="">Select Unit/Department</option>
+                                <option value="Unit-1">Unit-1</option>
+                                <option value="Unit-2">Unit-2</option>
+                                <option value="Unit-3">Unit-3</option>
+                                <option value="Unit-4">Unit-4</option>
+                                <option value="Unit-5">Unit-5</option>
+                                <option value="GSS">GSS</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="role" class="form-label">Role *</label>
+                            <select class="form-select" id="role" name="role" required>
+                                <option value="user">User</option>
+                                <option value="manager">Admin</option>
+                                <option value="super_manager">Super Admin</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary" id="addUserBtn">
+                        <i class="fas fa-user-plus"></i> Add User
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Collapsible Search Filter Section -->
+<div class="card mb-4 search-filter-card">
+    <div class="card-header" id="searchFilterHeader" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#searchFilterCollapse" aria-expanded="false" aria-controls="searchFilterCollapse">
+        <h6 class="card-title mb-0 d-flex justify-content-between align-items-center">
+            <span>
+                <i class="fas fa-search"></i> Search & Filter Users
+            </span>
+            <i class="fas fa-chevron-down" id="searchFilterIcon"></i>
+        </h6>
+    </div>
+    <div class="collapse" id="searchFilterCollapse">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <label for="searchField" class="form-label">Search By:</label>
+                    <select class="form-select" id="searchField">
+                        <option value="user_id">User ID</option>
+                        <option value="name">Name</option>
+                        <option value="email">Email</option>
+                        <option value="employee_id">Employee ID</option>
+                        <option value="department">Department</option>
+                        <option value="unit">Unit</option>
+                        <option value="role">Role</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="searchInput" class="form-label">Search Term:</label>
+                    <input type="text" class="form-control" id="searchInput" placeholder="Enter search term...">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-primary" id="searchBtn">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="clearSearchBtn">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div id="searchResults" class="search-results-info" style="display: none;">
+                        <i class="fas fa-info-circle"></i>
+                        <span id="searchResultsText"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- All Users List -->
+<div class="mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-users"></i> All Users <span id="user-count">({{ users|length }})</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if users %}
+                <div class="table-responsive" style="max-height: 700px; overflow-y: auto;">
+                    <table class="table table-hover" style="min-width: 900px;" id="usersTable">
+                        <thead class="table-dark sticky-top">
+                            <tr>
+                                <th style="width: 80px;">ID</th>
+                                <th style="width: 150px;">Name</th>
+                                <th style="width: 200px;">Email</th>
+                                <th style="width: 120px;">Employee ID</th>
+                                <th style="width: 120px;">Department</th>
+                                <th style="width: 120px;">Unit</th>
+                                <th style="width: 100px;">Role</th>
+                                <th style="width: 120px;">Created</th>
+                                <th style="width: 120px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr class="user-row" 
+                                data-user-id="{{ user.id }}"
+                                data-name="{{ user.name }}"
+                                data-email="{{ user.email }}"
+                                data-employee-id="{{ user.employee_id or '' }}"
+                                data-department="{{ user.department or '' }}"
+                                data-unit="{{ user.unit }}"
+                                data-role="{{ user.role }}">
+                                <td><span class="badge bg-secondary">#{{ user.id }}</span></td>
+                                <td>{{ user.name }}</td>
+                                <td>
+                                    <small class="text-muted">{{ user.email }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ user.employee_id or 'N/A' }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-warning">{{ user.department or 'N/A' }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ user.unit }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if user.role == 'manager' %}danger{% elif user.role == 'super_manager' %}warning{% else %}primary{% endif %}">
+                                        {% if user.role == 'manager' %}Admin{% elif user.role == 'super_manager' %}Super Admin{% else %}{{ user.role.title() }}{% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ user.created_at.strftime('%m/%d/%Y') }}</small>
+                                </td>
+                                <td>
+                                    {% if user.id != current_user.id %}
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-primary btn-sm edit-user-btn" data-user-id="{{ user.id }}" data-user-name="{{ user.name }}" data-user-email="{{ user.email }}" data-user-employee-id="{{ user.employee_id }}" data-user-department="{{ user.department }}" data-user-unit="{{ user.unit }}" data-user-role="{{ user.role }}">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-sm delete-user-btn" data-user-id="{{ user.id }}" data-user-name="{{ user.name }}">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </button>
+                                    </div>
+                                    {% else %}
+                                    <span class="text-muted">Current User</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Users Found</h5>
+                    <p class="text-muted">Add your first user using the form on the left.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+</div>
+
+<!-- Edit User Modal -->
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editUserModalLabel">Edit User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editUserForm" method="POST" action="{{ url_for('mrwr.update_user') }}">
+                <div class="modal-body">
+                    <input type="hidden" id="edit_user_id" name="user_id" value="">
+                    
+                    <div class="mb-3">
+                        <label for="edit_name" class="form-label">Name *</label>
+                        <input type="text" class="form-control" id="edit_name" name="name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_email" class="form-label">Email *</label>
+                        <input type="email" class="form-control" id="edit_email" name="email" required>
+                        <div class="invalid-feedback" id="editEmailError"></div>
+                        <div class="valid-feedback" id="editEmailSuccess"></div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_employee_id" class="form-label">Employee ID *</label>
+                        <input type="text" class="form-control" id="edit_employee_id" name="employee_id" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_department" class="form-label">Department *</label>
+                        <input type="text" class="form-control" id="edit_department" name="department" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_unit" class="form-label">Unit/Department *</label>
+                        <select class="form-select" id="edit_unit" name="unit" required>
+                            <option value="">Select Unit/Department</option>
+                            <option value="Unit-1">Unit-1</option>
+                            <option value="Unit-2">Unit-2</option>
+                            <option value="Unit-3">Unit-3</option>
+                            <option value="Unit-4">Unit-4</option>
+                            <option value="Unit-5">Unit-5</option>
+                            <option value="GSS">GSS</option>
+                        </select>
+                    </div>
+                    
+                        <div class="mb-3">
+                            <label for="edit_role" class="form-label">Role *</label>
+                            <select class="form-select" id="edit_role" name="role" required>
+                                <option value="">Select Role</option>
+                                <option value="user">User</option>
+                                <option value="manager">Admin</option>
+                                <option value="super_manager">Super Admin</option>
+                            </select>
+                        </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_password" class="form-label">New Password</label>
+                        <input type="password" class="form-control" id="edit_password" name="password" placeholder="Leave blank to keep current password" autocomplete="current-password">
+                        <div class="invalid-feedback" id="editPasswordError"></div>
+                        <div class="valid-feedback" id="editPasswordSuccess"></div>
+                        <div class="form-text">
+                            <small class="text-muted">
+                                Leave blank to keep current password<br>
+                                <strong>If changing password:</strong><br>
+                                • Minimum 8 characters<br>
+                                • Must contain letters and numbers
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="updateUserBtn">Update User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+console.log("Add user script loaded and executed.");
+// Email validation function
+function validateEmail(email) {
+    // A more generic email validation regex
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+// Password validation function
+function validatePassword(password) {
+    // Check minimum length - reduced to 8 for easier use
+        if (password.length < 8) {
+            console.log('Password validation failed: too short');
+            return { valid: false, message: 'Password must be at least 8 characters long' };
+        }
+        
+        // Check if contains letters and numbers
+        if (!/[a-zA-Z]/.test(password)) {
+            console.log('Password validation failed: no letters');
+            return { valid: false, message: 'Password must contain at least one letter' };
+        }
+        
+        if (!/\d/.test(password)) {
+            console.log('Password validation failed: no numbers');
+            return { valid: false, message: 'Password must contain at least one number' };
+        }
+        
+        // Removed the overly strict continuous numbers check
+        // This was blocking valid passwords like "test123" or "password2024"
+        
+        console.log('Password validation successful');
+        return { valid: true, message: 'Strong password' };
+    }
+
+// Show validation feedback
+function showEmailValidation(inputId, errorId, successId, isValid, message) {
+    const input = document.getElementById(inputId);
+    const errorDiv = document.getElementById(errorId);
+    const successDiv = document.getElementById(successId);
+    
+    // Remove existing validation classes
+    input.classList.remove('is-valid', 'is-invalid');
+    errorDiv.style.display = 'none';
+    successDiv.style.display = 'none';
+    
+    if (isValid) {
+        input.classList.add('is-valid');
+        successDiv.textContent = message;
+        successDiv.style.display = 'block';
+    } else {
+        input.classList.add('is-invalid');
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+    }
+    
+    return isValid;
+}
+
+// Show password validation feedback
+function showPasswordValidation(inputId, errorId, successId, isValid, message) {
+    const input = document.getElementById(inputId);
+    const errorDiv = document.getElementById(errorId);
+    const successDiv = document.getElementById(successId);
+    
+    // Remove existing validation classes
+    input.classList.remove('is-valid', 'is-invalid');
+    errorDiv.style.display = 'none';
+    successDiv.style.display = 'none';
+    
+    if (isValid) {
+        input.classList.add('is-valid');
+        successDiv.textContent = message;
+        successDiv.style.display = 'block';
+    } else {
+        input.classList.add('is-invalid');
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+    }
+    
+    return isValid;
+}
+
+// Check if form is valid for submission
+function isFormValid() {
+    const nameInput = document.getElementById('name');
+    const emailInput = document.getElementById('email');
+    const employeeIdInput = document.getElementById('employee_id');
+    const departmentInput = document.getElementById('department');
+    const passwordInput = document.getElementById('password');
+    const unitInput = document.getElementById('unit');
+    const roleInput = document.getElementById('role');
+
+    const nameValid = nameInput.value.trim() !== '';
+    const emailValid = validateEmail(emailInput.value.trim());
+    const employeeIdValid = true; // Employee ID is now optional
+    const departmentValid = true; // Department is now optional
+        const passwordValid = passwordInput.value === '' ? false : validatePassword(passwordInput.value).valid;
+        const unitValid = unitInput.value !== '';
+        const roleValid = roleInput.value !== '';
+
+        console.log('isFormValid - Password field value:', passwordInput.value, 'Password Valid status:', passwordValid);
+        console.log('isFormValid - Unit field value:', unitInput.value, 'Unit Valid status:', unitValid);
+
+    console.log('isFormValid - Name Valid:', nameValid, 'Email Valid:', emailValid, 'Employee ID Valid:', employeeIdValid, 'Department Valid:', departmentValid, 'Password Valid:', passwordValid, 'Unit Valid:', unitValid, 'Role Valid:', roleValid);
+    
+    return nameValid && emailValid && employeeIdValid && departmentValid && passwordValid && unitValid && roleValid;
+}
+
+// Check if edit form is valid for submission
+function isEditFormValid() {
+    const emailInput = document.getElementById('edit_email');
+    const passwordInput = document.getElementById('edit_password');
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+    
+    const emailValid = validateEmail(email);
+    // For edit form, password is optional (can be blank to keep current)
+    const passwordValid = password === '' ? true : validatePassword(password).valid;
+    console.log('isEditFormValid - Email Valid:', emailValid, 'Password Valid:', passwordValid);
+    return emailValid && passwordValid;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const createUserBtn = document.getElementById('createUserBtn');
+    const addUserForm = document.getElementById('addUserForm');
+    const hideUserFormBtn = document.getElementById('hideUserForm');
+    const addUserBtn = document.getElementById('addUserBtn');
+    const updateUserBtn = document.getElementById('updateUserBtn');
+    
+    // Show form when "Create Add New User" button is clicked
+    createUserBtn.addEventListener('click', function() {
+        addUserForm.classList.remove('d-none');
+        addUserForm.classList.add('d-block');
+        // Scroll to the form
+        addUserForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    
+    // Hide form when "Hide Form" button is clicked
+    hideUserFormBtn.addEventListener('click', function() {
+        addUserForm.classList.remove('d-block');
+        addUserForm.classList.add('d-none');
+    });
+    
+    // Real-time email validation for Add User form
+    document.getElementById('email').addEventListener('input', function() {
+        const email = this.value.trim();
+        if (email === '') {
+            showEmailValidation('email', 'emailError', 'emailSuccess', false, 'Email address is required');
+        } else if (!validateEmail(email)) {
+            showEmailValidation('email', 'emailError', 'emailSuccess', false, 'Please enter a valid email address');
+        } else {
+            showEmailValidation('email', 'emailError', 'emailSuccess', true, 'Valid email address');
+        }
+        
+        // Enable/disable submit button
+        const formIsValid = isFormValid();
+        addUserBtn.disabled = !formIsValid;
+        console.log('Add User Form - Email input, form valid:', formIsValid, 'button disabled:', addUserBtn.disabled);
+    });
+    
+    // Add event listeners for other required fields to update button state
+    document.getElementById('name').addEventListener('input', function() {
+        addUserBtn.disabled = !isFormValid();
+        console.log('Add User Form - Name input, form valid:', isFormValid(), 'button disabled:', addUserBtn.disabled);
+    });
+
+    // Removed event listener for employee_id as it's no longer required
+ 
+    // Removed event listener for department as it's no longer required
+
+    document.getElementById('unit').addEventListener('change', function() {
+        addUserBtn.disabled = !isFormValid();
+        console.log('Add User Form - Unit select, form valid:', isFormValid(), 'button disabled:', addUserBtn.disabled);
+    });
+
+    document.getElementById('role').addEventListener('change', function() {
+        addUserBtn.disabled = !isFormValid();
+        console.log('Add User Form - Role select, form valid:', isFormValid(), 'button disabled:', addUserBtn.disabled);
+    });
+
+    // Real-time password validation for Add User form
+    document.getElementById('password').addEventListener('input', function() {
+        const password = this.value;
+        if (password === '') {
+            showPasswordValidation('password', 'passwordError', 'passwordSuccess', false, 'Password is required');
+        } else {
+            const validation = validatePassword(password);
+            showPasswordValidation('password', 'passwordError', 'passwordSuccess', validation.valid, validation.message);
+        }
+        
+        // Enable/disable submit button
+        const formIsValid = isFormValid();
+        addUserBtn.disabled = !formIsValid;
+        console.log('Add User Form - Password input, form valid:', formIsValid, 'button disabled:', addUserBtn.disabled);
+    });
+    
+    // Real-time email validation for Edit User form
+    document.getElementById('edit_email').addEventListener('input', function() {
+        const email = this.value.trim();
+        if (email === '') {
+            showEmailValidation('edit_email', 'editEmailError', 'editEmailSuccess', false, 'Email address is required');
+        } else if (!validateEmail(email)) {
+            showEmailValidation('edit_email', 'editEmailError', 'editEmailSuccess', false, 'Please enter a valid email address');
+        } else {
+            showEmailValidation('edit_email', 'editEmailError', 'editEmailSuccess', true, 'Valid email address');
+        }
+        
+        // Enable/disable submit button
+        updateUserBtn.disabled = !isEditFormValid();
+    });
+    
+    // Real-time password validation for Edit User form
+    document.getElementById('edit_password').addEventListener('input', function() {
+        const password = this.value;
+        if (password === '') {
+            // Clear validation when password is empty (optional field)
+            showPasswordValidation('edit_password', 'editPasswordError', 'editPasswordSuccess', true, '');
+        } else {
+            const validation = validatePassword(password);
+            showPasswordValidation('edit_password', 'editPasswordError', 'editPasswordSuccess', validation.valid, validation.message);
+        }
+        
+        // Enable/disable submit button
+        updateUserBtn.disabled = !isEditFormValid();
+    });
+    
+    // Form submission validation for Add User
+    document.getElementById('addUserActualForm').addEventListener('submit', function(e) {
+        console.log('Add User Form - Submit event triggered.');
+        const formIsValidAtSubmit = isFormValid();
+        console.log('Add User Form - isFormValid() at submit:', formIsValidAtSubmit);
+        
+        if (!formIsValidAtSubmit) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const nameInput = document.getElementById('name');
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            const unitInput = document.getElementById('unit');
+            const roleInput = document.getElementById('role');
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+            
+            let errorMessage = 'Please fix the following errors:\n';
+            let hasErrors = false;
+            
+            if (nameInput.value.trim() === '') {
+                errorMessage += '• Full Name is required\n';
+                hasErrors = true;
+            }
+            if (!validateEmail(email)) {
+                errorMessage += '• Please enter a valid email address\n';
+                hasErrors = true;
+            }
+            if (password === '' || !validatePassword(password).valid) {
+                errorMessage += '• Enter a valid password (min 8 chars, must contain letters and numbers)\n';
+                hasErrors = true;
+            }
+            if (unitInput.value === '') {
+                errorMessage += '• Unit/Department is required\n';
+                hasErrors = true;
+            }
+            if (roleInput.value === '') {
+                errorMessage += '• Role is required\n';
+                hasErrors = true;
+            }
+            
+            if (hasErrors) {
+                alert(errorMessage);
+                console.log('Add User Form - Validation failed, preventing submission');
+                return false;
+            }
+        }
+        
+        console.log('Add User Form - Form is valid, allowing submission.');
+        return true;
+    });
+    
+    // Form submission validation for Edit User
+    document.getElementById('editUserForm').addEventListener('submit', function(e) {
+        if (!isEditFormValid()) {
+            e.preventDefault();
+            const emailInput = document.getElementById('edit_email');
+            const passwordInput = document.getElementById('edit_password');
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+            
+            let errorMessage = 'Please fix the following errors:\n';
+            if (!validateEmail(email)) {
+                errorMessage += '• Please enter a valid email address\n';
+            }
+            if (password !== '' && !validatePassword(password).valid) {
+                errorMessage += '• Enter a valid password (min 8 chars, must contain letters and numbers)';
+            }
+            alert(errorMessage);
+            return false;
+        }
+    });
+    
+    // Handle edit user button clicks
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.edit-user-btn')) {
+            const button = e.target.closest('.edit-user-btn');
+            const userId = button.getAttribute('data-user-id');
+            const userName = button.getAttribute('data-user-name');
+            const userEmail = button.getAttribute('data-user-email');
+            const userEmployeeId = button.getAttribute('data-user-employee-id');
+            const userDepartment = button.getAttribute('data-user-department');
+            const userUnit = button.getAttribute('data-user-unit');
+            const userRole = button.getAttribute('data-user-role');
+            editUser(userId, userName, userEmail, userEmployeeId, userDepartment, userUnit, userRole);
+        }
+    });
+    
+    // Handle delete user button clicks
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.delete-user-btn')) {
+            const button = e.target.closest('.delete-user-btn');
+            const userId = button.getAttribute('data-user-id');
+            const userName = button.getAttribute('data-user-name');
+            deleteUser(userId, userName);
+        }
+    });
+    
+    // Initialize button states
+    addUserBtn.disabled = true;
+    updateUserBtn.disabled = true;
+    
+    // Debug: Log initial form state
+    console.log('Add User Form - Initial state:');
+    console.log('- Button disabled:', addUserBtn.disabled);
+    console.log('- Form valid:', isFormValid());
+    
+    // Search functionality for users
+    const searchField = document.getElementById('searchField');
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    const searchResults = document.getElementById('searchResults');
+    const searchResultsText = document.getElementById('searchResultsText');
+    const usersTable = document.getElementById('usersTable');
+    const userRows = document.querySelectorAll('.user-row');
+    const searchFilterIcon = document.getElementById('searchFilterIcon');
+    const searchFilterCollapse = document.getElementById('searchFilterCollapse');
+    
+    let allUsers = Array.from(userRows);
+    let filteredUsers = allUsers;
+    
+    // Handle collapse events for icon rotation
+    if (searchFilterCollapse) {
+        searchFilterCollapse.addEventListener('show.bs.collapse', function () {
+            searchFilterIcon.classList.add('rotated');
+        });
+        
+        searchFilterCollapse.addEventListener('hide.bs.collapse', function () {
+            searchFilterIcon.classList.remove('rotated');
+        });
+    }
+    
+    // Search function for users
+    function performUserSearch() {
+        const searchBy = searchField.value;
+        const searchTerm = searchInput.value.trim().toLowerCase();
+        
+        if (searchTerm === '') {
+            // Show all users if search is empty
+            filteredUsers = allUsers;
+        } else {
+            // Filter users based on search criteria
+            filteredUsers = allUsers.filter(function(row) {
+                const dataAttribute = 'data-' + searchBy.replace('_', '-');
+                const cellValue = row.getAttribute(dataAttribute) || '';
+                return cellValue.toLowerCase().includes(searchTerm);
+            });
+        }
+        
+        // Hide all rows first
+        allUsers.forEach(function(row) {
+            row.style.display = 'none';
+        });
+        
+        // Show filtered rows
+        filteredUsers.forEach(function(row) {
+            row.style.display = '';
+        });
+        
+        // Update search results display
+        if (searchTerm !== '') {
+            const searchFieldName = searchField.options[searchField.selectedIndex].text;
+            searchResultsText.textContent = `Found ${filteredUsers.length} result(s) for "${searchInput.value}" in ${searchFieldName}`;
+            searchResults.style.display = 'block';
+        } else {
+            searchResults.style.display = 'none';
+        }
+        
+        // Show/hide table based on results
+        if (filteredUsers.length === 0 && searchTerm !== '') {
+            usersTable.style.display = 'none';
+            // Show no results message
+            if (!document.getElementById('noResultsMessage')) {
+                const noResultsDiv = document.createElement('div');
+                noResultsDiv.id = 'noResultsMessage';
+                noResultsDiv.className = 'text-center py-5';
+                noResultsDiv.innerHTML = `
+                    <i class="fas fa-search fa-5x text-muted mb-3"></i>
+                    <h3 class="text-muted">No Results Found</h3>
+                    <p class="text-muted">No users found matching your search criteria.</p>
+                    <button type="button" class="btn btn-outline-primary" onclick="clearUserSearch()">
+                        <i class="fas fa-times"></i> Clear Search
+                    </button>
+                `;
+                usersTable.parentNode.insertBefore(noResultsDiv, usersTable.nextSibling);
+            }
+        } else {
+            usersTable.style.display = '';
+            const noResultsMsg = document.getElementById('noResultsMessage');
+            if (noResultsMsg) {
+                noResultsMsg.remove();
+            }
+        }
+    }
+    
+    // Clear search function for users
+    function clearUserSearch() {
+        searchInput.value = '';
+        searchResults.style.display = 'none';
+        filteredUsers = allUsers;
+        
+        // Show all users
+        allUsers.forEach(function(row) {
+            row.style.display = '';
+        });
+        
+        usersTable.style.display = '';
+        const noResultsMsg = document.getElementById('noResultsMessage');
+        if (noResultsMsg) {
+            noResultsMsg.remove();
+        }
+    }
+    
+    // Event listeners for user search
+    if (searchBtn) {
+        searchBtn.addEventListener('click', performUserSearch);
+    }
+    if (clearSearchBtn) {
+        clearSearchBtn.addEventListener('click', clearUserSearch);
+    }
+    
+    // Real-time search as user types
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            // Debounce the search to avoid too many calls
+            clearTimeout(this.searchTimeout);
+            this.searchTimeout = setTimeout(performUserSearch, 300);
+        });
+        
+        // Search on Enter key
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                performUserSearch();
+            }
+        });
+    }
+    
+    // Make clearUserSearch function globally available
+    window.clearUserSearch = clearUserSearch;
+});
+
+function editUser(userId, userName, userEmail, userEmployeeId, userDepartment, userUnit, userRole) {
+    // Populate the edit modal with user data
+    document.getElementById('edit_user_id').value = userId;
+    document.getElementById('edit_name').value = userName;
+    document.getElementById('edit_email').value = userEmail;
+    document.getElementById('edit_employee_id').value = userEmployeeId;
+    document.getElementById('edit_department').value = userDepartment;
+    document.getElementById('edit_unit').value = userUnit;
+    document.getElementById('edit_role').value = userRole;
+    document.getElementById('edit_password').value = ''; // Clear password field
+    
+    // Validate the email when modal opens
+    const email = userEmail.trim();
+    if (email === '') {
+        showEmailValidation('edit_email', 'editEmailError', 'editEmailSuccess', false, 'Email address is required');
+    } else if (!validateEmail(email)) {
+        showEmailValidation('edit_email', 'editEmailError', 'editEmailSuccess', false, 'Please enter a valid email address');
+    } else {
+        showEmailValidation('edit_email', 'editEmailError', 'editEmailSuccess', true, 'Valid email address');
+    }
+    
+    // Enable/disable submit button based on validation
+    document.getElementById('updateUserBtn').disabled = !isEditFormValid();
+    
+    // Show the modal
+    const editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
+    editModal.show();
+}
+
+function deleteUser(userId, userName) {
+    if (confirm('Are you sure you want to delete user "' + userName + '"?\n\nThis action cannot be undone.')) {
+        // Create a form to submit the delete request
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ url_for("mrwr.delete_user") }}';
+        
+        // Add CSRF token if available
+        const csrfToken = document.querySelector('meta[name=csrf-token]');
+        if (csrfToken) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = csrfToken.getAttribute('content');
+            form.appendChild(csrfInput);
+        }
+        
+        // Add user ID
+        const userIdInput = document.createElement('input');
+        userIdInput.type = 'hidden';
+        userIdInput.name = 'user_id';
+        userIdInput.value = userId;
+        form.appendChild(userIdInput);
+        
+        // Submit the form
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

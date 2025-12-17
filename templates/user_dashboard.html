@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Maintenance Help Desk{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-0 pb-0 mb-3 border-bottom">
+    <h1 class="h2">Dashboard</h1>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">Production Machine Tickets</h5>
+                        <h2 class="mb-0">{{ user_production }}</h2>
+                        <small>Open: {{ open_user_production }}</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-industry fa-3x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('mrwr.my_production_tickets') }}" class="text-white text-decoration-none">
+                    View All <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">Electrical Tickets</h5>
+                        <h2 class="mb-0">{{ user_electrical }}</h2>
+                        <small>Open: {{ open_user_electrical }}</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-bolt fa-3x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('mrwr.my_electrical_tickets') }}" class="text-white text-decoration-none">
+                    View All <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-plus-circle fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">Raise Production Machine Ticket</h5>
+                <p class="card-text">Report issues with production machines</p>
+                <a href="{{ url_for('mrwr.raise_production_ticket') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Raise Ticket
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-plus-circle fa-3x text-success mb-3"></i>
+                <h5 class="card-title">Raise Electrical Ticket</h5>
+                <p class="card-text">Report electrical equipment issues</p>
+                <a href="{{ url_for('mrwr.raise_electrical_ticket') }}" class="btn btn-success">
+                    <i class="fas fa-plus"></i> Raise Ticket
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

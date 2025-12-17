@@ -1,0 +1,1032 @@
+{% extends "base.html" %}
+
+{% block title %}Manager - Electrical - Maintenance Help Desk{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Search Filter Styles */
+.search-filter-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.search-filter-card .card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px 8px 0 0;
+    transition: all 0.3s ease;
+}
+
+.search-filter-card .card-header:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.search-filter-card .card-header h6 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.search-filter-card .card-header[aria-expanded="true"] {
+    border-radius: 8px 8px 0 0;
+}
+
+.search-filter-card .card-header[aria-expanded="false"] {
+    border-radius: 8px;
+}
+
+#searchFilterIcon {
+    transition: transform 0.3s ease;
+    font-size: 0.9rem;
+}
+
+#searchFilterIcon.rotated {
+    transform: rotate(180deg);
+}
+
+.search-results-info {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border: 1px solid #2196f3;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-top: 16px;
+}
+
+.search-results-info i {
+    color: #1976d2;
+    margin-right: 8px;
+}
+
+.no-results-message {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    border: 1px solid #ff9800;
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.no-results-message i {
+    color: #f57c00;
+    margin-bottom: 16px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .search-filter-card .row > div {
+        margin-bottom: 15px;
+    }
+    
+    .search-filter-card .d-flex.gap-2 {
+        flex-direction: column;
+        gap: 8px !important;
+    }
+    
+    .search-filter-card .d-flex.gap-2 .btn {
+        width: 100%;
+    }
+}
+
+/* Search input focus styles */
+#searchInput:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* Search button hover effect */
+#searchBtn:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<style>
+    .table th, .table td {
+        min-width: 120px;
+        white-space: nowrap;
+    }
+    
+    .table th:nth-child(1), .table td:nth-child(1) { min-width: 80px; }  /* Ticket ID */
+    .table th:nth-child(2), .table td:nth-child(2) { min-width: 100px; }  /* Name */
+    .table th:nth-child(3), .table td:nth-child(3) { min-width: 180px; }  /* Email */
+    .table th:nth-child(4), .table td:nth-child(4) { min-width: 120px; }  /* Employee ID */
+    .table th:nth-child(5), .table td:nth-child(5) { min-width: 140px; }  /* Department */
+    .table th:nth-child(6), .table td:nth-child(6) { min-width: 100px; }  /* Unit */
+    .table th:nth-child(7), .table td:nth-child(7) { min-width: 200px; }  /* Equipment Name */
+    .table th:nth-child(8), .table td:nth-child(8) { min-width: 250px; }  /* Issue Description */
+    .table th:nth-child(9), .table td:nth-child(9) { min-width: 100px; }  /* Priority */
+    .table th:nth-child(10), .table td:nth-child(10) { min-width: 120px; }  /* Status */
+    .table th:nth-child(11), .table td:nth-child(11) { min-width: 180px; }  /* Approver Mail */
+    .table th:nth-child(12), .table td:nth-child(12) { min-width: 160px; }  /* Approved Date Time */
+    .table th:nth-child(13), .table td:nth-child(13) { min-width: 200px; }  /* Resolved Reason */
+    .table th:nth-child(14), .table td:nth-child(14) { min-width: 180px; }  /* Ticket Closed Date Time */
+    .table th:nth-child(15), .table td:nth-child(15) { min-width: 140px; }  /* Created Date */
+    .table th:nth-child(16), .table td:nth-child(16) { min-width: 120px; }  /* Actions */
+</style>
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-0 pb-0 mb-3 border-bottom">
+    <h1 class="h2">Electrical Tickets</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('mrwr.manager_electrical', status='all') }}" class="btn btn-outline-secondary {% if current_filter == 'all' %}active{% endif %}">All</a>
+            <a href="{{ url_for('mrwr.manager_electrical', status='open') }}" class="btn btn-outline-success {% if current_filter == 'open' %}active{% endif %}">Open</a>
+            <a href="{{ url_for('mrwr.manager_electrical', status='in_progress') }}" class="btn btn-outline-warning {% if current_filter == 'in_progress' %}active{% endif %}">In Progress</a>
+            <a href="{{ url_for('mrwr.manager_electrical', status='pending') }}" class="btn btn-outline-info {% if current_filter == 'pending' %}active{% endif %}">Pending</a>
+            <a href="{{ url_for('mrwr.manager_electrical', status='closed') }}" class="btn btn-outline-secondary {% if current_filter == 'closed' %}active{% endif %}">Closed</a>
+        </div>
+        <button type="button" class="btn btn-primary" id="exportCsvBtn">
+            <i class="fas fa-file-csv"></i> Export CSV
+        </button>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+    if (exportCsvBtn) {
+        exportCsvBtn.addEventListener('click', function() {
+            const currentStatusFilter = "{{ current_filter }}"; // Get current filter from Flask context
+            let exportUrl = "{{ url_for('mrwr.export_electrical_tickets_csv') }}";
+            
+            if (currentStatusFilter && currentStatusFilter !== 'all') {
+                exportUrl += `?status=${currentStatusFilter}`;
+            }
+            
+            window.location.href = exportUrl;
+        });
+    }
+});
+</script>
+
+<!-- Collapsible Search Filter Section -->
+<div class="card mb-4 search-filter-card">
+    <div class="card-header" id="searchFilterHeader" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#searchFilterCollapse" aria-expanded="false" aria-controls="searchFilterCollapse">
+        <h6 class="card-title mb-0 d-flex justify-content-between align-items-center">
+            <span>
+                <i class="fas fa-search"></i> Search & Filter Tickets
+            </span>
+            <i class="fas fa-chevron-down" id="searchFilterIcon"></i>
+        </h6>
+    </div>
+    <div class="collapse" id="searchFilterCollapse">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <label for="searchField" class="form-label">Search By:</label>
+                    <select class="form-select" id="searchField">
+                        <option value="ticket_id">Ticket ID</option>
+                        <option value="user_name">User Name</option>
+                        <option value="user_email">User Email</option>
+                        <option value="employee_id">Employee ID</option>
+                        <option value="department">Department</option>
+                        <option value="unit">Unit</option>
+                        <option value="equipment_name">Equipment Name</option>
+                        <option value="issue_description">Issue Description</option>
+                        <option value="priority">Priority</option>
+                        <option value="status">Status</option>
+                        <option value="approver_mail">Approver Mail</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="searchInput" class="form-label">Search Term:</label>
+                    <input type="text" class="form-control" id="searchInput" placeholder="Enter search term...">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-primary" id="searchBtn">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="clearSearchBtn">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div id="searchResults" class="search-results-info" style="display: none;">
+                        <i class="fas fa-info-circle"></i>
+                        <span id="searchResultsText"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if tickets_with_history %}
+<style>
+    .table th, .table td {
+        white-space: nowrap; /* Prevent text wrapping */
+        overflow: hidden;    /* Hide overflowing content */
+        text-overflow: ellipsis; /* Add ellipsis for truncated text */
+    }
+    /* Set minimum widths for columns to ensure content visibility */
+    .table th:nth-child(1), .table td:nth-child(1) { min-width: 80px; }  /* Ticket ID */
+    .table th:nth-child(2), .table td:nth-child(2) { min-width: 100px; }  /* Name */
+    .table th:nth-child(3), .table td:nth-child(3) { min-width: 180px; }  /* Email */
+    .table th:nth-child(4), .table td:nth-child(4) { min-width: 120px; }  /* Employee ID */
+    .table th:nth-child(5), .table td:nth-child(5) { min-width: 140px; }  /* Department */
+    .table th:nth-child(6), .table td:nth-child(6) { min-width: 100px; }  /* Unit */
+    .table th:nth-child(7), .table td:nth-child(7) { min-width: 200px; }  /* Equipment Name */
+    .table th:nth-child(8), .table td:nth-child(8) { min-width: 250px; }  /* Issue Description */
+    .table th:nth-child(9), .table td:nth-child(9) { min-width: 100px; }  /* Priority */
+    .table th:nth-child(10), .table td:nth-child(10) { min-width: 120px; }  /* Status */
+    .table th:nth-child(11), .table td:nth-child(11) { min-width: 180px; }  /* Approver Mail */
+    .table th:nth-child(12), .table td:nth-child(12) { min-width: 160px; }  /* Approved Date Time */
+    .table th:nth-child(13), .table td:nth-child(13) { min-width: 200px; }  /* Resolved Reason */
+    .table th:nth-child(14), .table td:nth-child(14) { min-width: 180px; }  /* Ticket Closed Date Time */
+    .table th:nth-child(15), .table td:nth-child(15) { min-width: 140px; }  /* Created Date */
+</style>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover" id="ticketsTable">
+        <thead class="table-dark">
+            <tr>
+                <th>Ticket ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Employee ID</th>
+                <th>Department *</th>
+                <th>Unit *</th>
+                <th>Equipment Name</th>
+                <th>Issue Description</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Approver Mail</th>
+                <th>Approved Date Time</th>
+                <th>Resolved Reason</th>
+                <th>Ticket Closed Date and Time</th>
+                <th>Created Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ticket, history, unit_managers in tickets_with_history %}
+            <tr class="ticket-row"
+                data-ticket-id="{{ ticket.id }}"
+                data-user-name="{{ ticket.name or '' }}"
+                data-user-email="{{ ticket.email or '' }}"
+                data-employee-id="{{ ticket.employee_id or '' }}"
+                data-department="{{ ticket.department or '' }}"
+                data-unit="{{ ticket.unit or '' }}"
+                data-equipment-name="{{ ticket.equipment_name or '' }}"
+                data-issue-description="{{ ticket.issue_description or '' }}"
+                data-priority="{{ ticket.priority or '' }}"
+                data-status="{{ ticket.status or '' }}"
+                data-approver-mail="{{ ticket.approver_mail or '' }}">
+                <td>
+                    <button type="button" class="btn btn-link p-0 text-decoration-none"
+                            data-bs-toggle="modal"
+                            data-bs-target="#electricalTicketModal{{ ticket.id }}"
+                            style="color: #0d6efd; font-weight: bold;">
+                        #{{ ticket.id }}
+                    </button>
+                </td>
+                <td>
+                    <span class="badge bg-primary">{{ ticket.name or 'N/A' }}</span>
+                </td>
+                <td>
+                    <span class="badge bg-info">{{ ticket.email or 'N/A' }}</span>
+                </td>
+                <td>
+                    <span class="badge bg-secondary">{{ ticket.employee_id or 'N/A' }}</span>
+                </td>
+                <td>
+                    <span class="badge bg-warning">{{ ticket.department or 'N/A' }}</span>
+                </td>
+                <td>
+                    <span class="badge bg-success">{{ ticket.unit or 'N/A' }}</span>
+                </td>
+                <td>{{ ticket.equipment_name }}</td>
+                <td>{{ ticket.issue_description[:50] }}{% if ticket.issue_description|length > 50 %}...{% endif %}</td>
+                <td>
+                    <span class="badge bg-{% if ticket.priority == 'high' %}danger{% elif ticket.priority == 'medium' %}warning{% else %}info{% endif %}">
+                        {{ ticket.priority.title() }}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge bg-{% if ticket.status == 'open' %}success{% elif ticket.status == 'in_progress' %}warning{% elif ticket.status == 'resolved' %}primary{% elif ticket.status == 'not_resolved' %}warning{% elif ticket.status == 'reopened' %}danger{% elif ticket.status == 'pending' %}info{% elif ticket.status == 'closed' %}primary text-dark{% elif ticket.status == 'hold' %}secondary{% elif ticket.status == 'approved' %}success{% else %}secondary text-dark{% endif %}">
+                        {{ ticket.status.replace('_', ' ').title() }}
+                    </span>
+                </td>
+                <td>{{ ticket.approver_mail or 'Not Approved' }}</td>
+                <td>{{ ticket.approved_date_time.strftime('%Y-%m-%d %H:%M') if ticket.approved_date_time else 'Not Approved' }}</td>
+                <td>{{ ticket.resolved_reason or 'Not Resolved' }}</td>
+                <td>{{ ticket.closed_date_time.strftime('%Y-%m-%d %H:%M') if ticket.closed_date_time else 'Not Closed' }}</td>
+                <td>{{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            </tr>
+            
+            <!-- Update Modal -->
+            <div class="modal fade" id="updateModal{{ ticket.id }}" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Update Ticket #{{ ticket.id }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form method="POST" action="{{ url_for('mrwr.update_electrical_ticket', ticket_id=ticket.id) }}">
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label for="status{{ ticket.id }}" class="form-label">Status</label>
+                                    <select class="form-select" id="status{{ ticket.id }}" name="status" required>
+                                        <option value="open" {% if ticket.status == 'open' %}selected{% endif %}>Open</option>
+                                        <option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                                        <option value="closed" {% if ticket.status == 'closed' %}selected{% endif %}>Closed</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="assigned_technician{{ ticket.id }}" class="form-label">Assigned Technician</label>
+                                    <input type="text" class="form-control" id="assigned_technician{{ ticket.id }}" name="assigned_technician" value="{{ ticket.assigned_technician or '' }}">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-success">Update Ticket</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Resolve Modal -->
+            <div class="modal fade" id="resolveModal{{ ticket.id }}" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Resolve Ticket #{{ ticket.id }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form method="POST" action="{{ url_for('mrwr.resolve_electrical_ticket', ticket_id=ticket.id) }}">
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Resolution Type</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="resolution_type" id="resolved{{ ticket.id }}" value="resolved" required>
+                                        <label class="form-check-label" for="resolved{{ ticket.id }}">
+                                            Resolved
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="resolution_type" id="not_resolved{{ ticket.id }}" value="not_resolved" required>
+                                        <label class="form-check-label" for="not_resolved{{ ticket.id }}">
+                                            Not Resolved
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="mb-3" id="reasonField{{ ticket.id }}">
+                                    <label for="resolved_reason{{ ticket.id }}" class="form-label">Resolution Reason *</label>
+                                    <textarea class="form-control" id="resolved_reason{{ ticket.id }}" name="resolved_reason" rows="3" placeholder="Please provide details about the resolution..." required></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-primary">Resolve Ticket</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if pagination.pages > 1 %}
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('mrwr.manager_electrical', status=current_filter, page=pagination.prev_num) }}" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+        {% for page_num in pagination.iter_pages() %}
+            {% if page_num %}
+                {% if page_num == pagination.page %}
+                <li class="page-item active"><a class="page-link" href="#">{{ page_num }}</a></li>
+                {% else %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('mrwr.manager_electrical', status=current_filter, page=page_num) }}">{{ page_num }}</a></li>
+                {% endif %}
+            {% else %}
+            <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
+            {% endif %}
+        {% endfor %}
+        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('mrwr.manager_electrical', status=current_filter, page=pagination.next_num) }}" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="text-center py-5">
+    <i class="fas fa-bolt fa-5x text-muted mb-3"></i>
+    <h3 class="text-muted">No Electrical Tickets</h3>
+    <p class="text-muted">No tickets found for the selected filter.</p>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle resolve modal logic
+    const resolveModals = document.querySelectorAll('[id^="resolveModal"]');
+    
+    resolveModals.forEach(function(modal) {
+        const modalId = modal.id;
+        const ticketId = modalId.replace('resolveModal', '');
+        
+        // Get radio buttons and reason field for this modal
+        const resolvedRadio = document.getElementById('resolved' + ticketId);
+        const notResolvedRadio = document.getElementById('not_resolved' + ticketId);
+        const reasonField = document.getElementById('reasonField' + ticketId);
+        const reasonTextarea = document.getElementById('resolved_reason' + ticketId);
+        
+        if (resolvedRadio && notResolvedRadio && reasonField && reasonTextarea) {
+            // Reason field is always visible and required for both resolution types
+            reasonTextarea.required = true;
+        }
+    });
+});
+</script>
+
+<!-- Electrical Ticket Detail Modals -->
+{% for ticket, history, unit_managers in tickets_with_history %}
+<div class="modal fade" id="electricalTicketModal{{ ticket.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-bolt"></i> Electrical Ticket Details - #{{ ticket.id }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Name:</label>
+                            <span class="badge bg-primary">{{ ticket.name or 'N/A' }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Email:</label>
+                            <span class="badge bg-info">{{ ticket.email or 'N/A' }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Employee ID:</label>
+                            <span class="badge bg-secondary">{{ ticket.employee_id or 'N/A' }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Department:</label>
+                            <span class="badge bg-warning">{{ ticket.department or 'N/A' }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Unit:</label>
+                            <span class="badge bg-info">{{ ticket.unit or 'N/A' }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Equipment Name:</label>
+                            <p class="mb-0">{{ ticket.equipment_name }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Priority:</label>
+                            <span class="badge bg-{% if ticket.priority == 'high' %}danger{% elif ticket.priority == 'medium' %}warning{% else %}info{% endif %}">
+                                {{ ticket.priority.title() }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Status:</label>
+                            <span class="badge bg-{% if ticket.status == 'open' %}success{% elif ticket.status == 'inprogress' %}warning{% elif ticket.status == 'resolved' %}primary{% elif ticket.status == 'not_resolved' %}warning{% elif ticket.status == 'reopened' %}danger{% elif ticket.status == 'pending' %}info{% elif ticket.status == 'closed' %}primary text-dark{% elif ticket.status == 'hold' %}secondary{% elif ticket.status == 'approved' %}success{% else %}secondary text-dark{% endif %}">
+                                {{ ticket.status.replace('_', ' ').title() }}
+                            </span>
+                        </div>
+                        {% if ticket.status == 'pending' and ticket.pending_reason %}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Pending Reason:</label>
+                            <div class="border rounded p-3 bg-light">
+                                <p class="mb-0">{{ ticket.pending_reason }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if ticket.status == 'hold' and ticket.hold_reason %}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Hold Reason:</label>
+                            <div class="border rounded p-3 bg-light">
+                                <p class="mb-0">{{ ticket.hold_reason }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Created Date:</label>
+                            <p class="mb-0">{{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Approver Mail:</label>
+                            <p class="mb-0">{{ ticket.approver_mail or 'Not Approved' }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Approved Date Time:</label>
+                            <p class="mb-0">{{ ticket.approved_date_time.strftime('%Y-%m-%d %H:%M') if ticket.approved_date_time else 'Not Approved' }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Ticket Closed Date and Time:</label>
+                            <p class="mb-0">{{ ticket.closed_date_time.strftime('%Y-%m-%d %H:%M') if ticket.closed_date_time else 'Not Closed' }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Issue Description:</label>
+                            <div class="border rounded p-3 bg-light">
+                                <p class="mb-0">{{ ticket.issue_description }}</p>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Resolved Reason:</label>
+                            <div class="border rounded p-3 bg-light">
+                                <p class="mb-0">{{ ticket.resolved_reason or 'Not Resolved' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Ticket History Section -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h6 class="fw-bold mb-3">
+                            <i class="fas fa-history"></i> Ticket History
+                        </h6>
+                        {% if history %}
+                            <div class="timeline">
+                                {% for entry in history %}
+                                <div class="timeline-item mb-3">
+                                    <div class="d-flex">
+                                        <div class="timeline-marker me-3">
+                                            {% if entry.action == 'created' %}
+                                                <i class="fas fa-plus-circle text-primary"></i>
+                                            {% elif entry.action == 'approved' %}
+                                                <i class="fas fa-check-circle text-success"></i>
+                                            {% elif entry.action == 'resolved' %}
+                                                <i class="fas fa-tools text-info"></i>
+                                            {% elif entry.action == 'issue_solved' %}
+                                                <i class="fas fa-check-circle text-success"></i>
+                                            {% elif entry.action == 'reopened' %}
+                                                <i class="fas fa-undo text-warning"></i>
+                                            {% elif entry.action == 'closed' %}
+                                                <i class="fas fa-times-circle text-secondary"></i>
+                                            {% else %}
+                                                <i class="fas fa-circle text-muted"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="timeline-content flex-grow-1">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <strong>{{ entry.action.replace('_', ' ').title() }}</strong>
+                                                    <span class="text-muted">by {{ entry.performed_by_name }}</span>
+                                                </div>
+                                                <small class="text-muted">{{ entry.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+                                            </div>
+                                            {% if entry.reason %}
+                                                <div class="mt-1">
+                                                    <small class="text-muted">{{ entry.reason }}</small>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted">No history available for this ticket.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="d-flex gap-2 flex-wrap">
+                    {% if ticket.status == 'open' %}
+                        {% if ticket.approver_mail %}
+                            <!-- Reopened ticket - only original approver can resolve -->
+                            {% if ticket.approver_mail == current_user.email %}
+                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#resolveModal{{ ticket.id }}">
+                                    <i class="fas fa-tools"></i> Resolve
+                                </button>
+                            {% else %}
+                                <span class="text-muted" title="Only {{ ticket.approver_mail }} can resolve this ticket">
+                                    <i class="fas fa-lock"></i> Not Your Ticket
+                                </span>
+                            {% endif %}
+                        {% else %}
+                            <!-- New ticket - show Approve button -->
+                            <form method="POST" action="{{ url_for('mrwr.approve_electrical_ticket', ticket_id=ticket.id) }}" style="display: inline;" class="approve-form">
+                                <button type="submit" class="btn btn-success approve-btn">
+                                    <i class="fas fa-check"></i> Approve
+                                </button>
+                            </form>
+                        {% endif %}
+                    {% elif ticket.status == 'inprogress' %}
+                        {% if ticket.approver_mail == current_user.email %}
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#resolveModal{{ ticket.id }}">
+                                <i class="fas fa-tools"></i> Resolve
+                            </button>
+                        {% else %}
+                            <span class="text-muted" title="Only {{ ticket.approver_mail }} can resolve this ticket">
+                                <i class="fas fa-lock"></i> Not Your Ticket
+                            </span>
+                        {% endif %}
+                    {% elif ticket.status == 'not_resolved' %}
+                        {% if ticket.approver_mail == current_user.email %}
+                            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#issueSolvedModal{{ ticket.id }}">
+                                <i class="fas fa-check-circle"></i> Issue Solved
+                            </button>
+                        {% else %}
+                            <span class="text-muted" title="Only {{ ticket.approver_mail }} can mark this ticket as issue solved">
+                                <i class="fas fa-lock"></i> Not Your Ticket
+                            </span>
+                        {% endif %}
+                    {% elif ticket.status == 'resolved' %}
+                        <span class="text-muted">Ticket Resolved</span>
+                    {% elif ticket.status == 'reopened' %}
+                        {% if ticket.approver_mail == current_user.email %}
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#resolveModal{{ ticket.id }}">
+                                <i class="fas fa-tools"></i> Resolve
+                            </button>
+                        {% else %}
+                            <span class="text-muted" title="Only {{ ticket.approver_mail }} can resolve this ticket">
+                                <i class="fas fa-lock"></i> Not Your Ticket
+                            </span>
+                        {% endif %}
+                    {% elif ticket.status == 'pending' %}
+                        {% if ticket.approver_mail == current_user.email %}
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#resolveModal{{ ticket.id }}">
+                                <i class="fas fa-tools"></i> Resolve
+                            </button>
+                        {% else %}
+                            <span class="text-muted" title="Only {{ ticket.approver_mail }} can resolve this ticket">
+                                <i class="fas fa-lock"></i> Not Your Ticket
+                            </span>
+                        {% endif %}
+                    {% elif ticket.status == 'hold' %}
+                        {% if current_user.role in ['manager', 'super_manager'] and ticket.held_by == current_user.email %}
+                            <form method="POST" action="{{ url_for('mrwr.take_back_electrical_ticket', ticket_id=ticket.id) }}" style="display: inline;">
+                                <button type="submit" class="btn btn-success take-back-btn">
+                                    <i class="fas fa-undo"></i> Take Back
+                                </button>
+                            </form>
+                        {% else %}
+                            <span class="text-muted" title="Only the admin who put this ticket on hold can take it back">
+                                <i class="fas fa-lock"></i> On Hold by {{ ticket.held_by }}
+                            </span>
+                        {% endif %}
+                    {% endif %}
+                    
+                    <!-- Pending button for Admin/Super Admin -->
+                    {% if ticket.status not in ['closed', 'resolved', 'pending', 'hold'] and (current_user.role == 'super_manager' or (current_user.role == 'manager' and ticket.approver_mail == current_user.email)) %}
+                        <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#pendingModal{{ ticket.id }}">
+                            <i class="fas fa-pause-circle"></i> Pending
+                        </button>
+                    {% endif %}
+
+                    <!-- Hold button for Admin -->
+                    {% if ticket.status not in ['closed', 'resolved', 'hold'] and (current_user.role == 'super_manager' or (current_user.role == 'manager' and ticket.approver_mail == current_user.email)) %}
+                        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#holdModal{{ ticket.id }}">
+                            <i class="fas fa-hand-paper"></i> Hold
+                        </button>
+                    {% endif %}
+
+                    <!-- Reassign dropdown for Super Admin -->
+                    {% if current_user.role == 'super_manager' and ticket.status not in ['closed', 'resolved', 'in_progress'] %}
+                        <form method="POST" action="{{ url_for('mrwr.reassign_electrical_ticket', ticket_id=ticket.id) }}" style="display: inline;" class="reassign-form">
+                            <div class="input-group">
+                                <select class="form-select" name="new_manager">
+                                    {% for manager in unit_managers %}
+                                        <option value="{{ manager.id }}">{{ manager.name }} ({{ manager.email }})</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-primary reassign-btn">Reassign</button>
+                            </div>
+                        </form>
+                    {% endif %}
+ 
+                    <!-- Delete button for Super Admin only -->
+                    {% if current_user.role == 'super_manager' %}
+                        <form method="POST" action="{{ url_for('mrwr.delete_electrical_ticket', ticket_id=ticket.id) }}" style="display: inline;" class="delete-form" onsubmit="return confirm('Are you sure you want to delete this electrical ticket? This action cannot be undone.');">
+                            <button type="submit" class="btn btn-danger delete-btn">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </form>
+                    {% endif %}
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Issue Solved Modal -->
+<div class="modal fade" id="issueSolvedModal{{ ticket.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Mark Issue as Solved - Ticket #{{ ticket.id }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('mrwr.issue_solved_electrical_ticket', ticket_id=ticket.id) }}" id="issueSolvedForm{{ ticket.id }}">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        This will mark the ticket as resolved. Please provide a reason for marking the issue as solved.
+                    </div>
+                    <div class="mb-3">
+                        <label for="issue_solved_reason{{ ticket.id }}" class="form-label">Reason for Issue Solved *</label>
+                        <textarea class="form-control" id="issue_solved_reason{{ ticket.id }}" name="issue_solved_reason" rows="3" placeholder="Please provide a reason for marking the issue as solved..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success" id="issueSolvedBtn{{ ticket.id }}">
+                        <i class="fas fa-check-circle"></i> Mark as Solved
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('issueSolvedBtn{{ ticket.id }}').addEventListener('click', function(e) {
+    e.preventDefault();
+    console.log('Issue Solved button clicked for ticket {{ ticket.id }}');
+    
+    const form = document.getElementById('issueSolvedForm{{ ticket.id }}');
+    const reason = document.getElementById('issue_solved_reason{{ ticket.id }}').value.trim();
+    
+    if (!reason) {
+        alert('Please provide a reason for marking the issue as solved.');
+        return;
+    }
+    
+    // Show processing state
+    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    this.disabled = true;
+    
+    // Submit the form
+    form.submit();
+});
+</script>
+<!-- Pending Modal -->
+<div class="modal fade" id="pendingModal{{ ticket.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Mark Ticket as Pending - #{{ ticket.id }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('mrwr.pending_electrical_ticket', ticket_id=ticket.id) }}" id="pendingForm{{ ticket.id }}">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        This will mark the ticket as pending and notify the user.
+                    </div>
+                    <div class="mb-3">
+                        <label for="pending_reason{{ ticket.id }}" class="form-label">Reason for Pending *</label>
+                        <textarea class="form-control" id="pending_reason{{ ticket.id }}" name="pending_reason" rows="3" placeholder="Please provide a reason for marking the ticket as pending..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-info" id="pendingBtn{{ ticket.id }}">
+                        <i class="fas fa-pause-circle"></i> Mark as Pending
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const pendingBtn = document.getElementById('pendingBtn{{ ticket.id }}');
+    if (pendingBtn) {
+        pendingBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Pending button clicked for ticket {{ ticket.id }}');
+            
+            const form = document.getElementById('pendingForm{{ ticket.id }}');
+            const reason = document.getElementById('pending_reason{{ ticket.id }}').value.trim();
+            
+            if (!reason) {
+                alert('Please provide a reason for marking the ticket as pending.');
+                return;
+            }
+            
+            // Show processing state
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            this.disabled = true;
+            
+            // Submit the form
+            form.submit();
+        });
+    }
+});
+</script>
+
+<!-- Hold Modal -->
+<div class="modal fade" id="holdModal{{ ticket.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Hold Ticket - #{{ ticket.id }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('mrwr.hold_electrical_ticket', ticket_id=ticket.id) }}" id="holdForm{{ ticket.id }}">
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-hand-paper"></i>
+                        This will put the ticket on hold. Please provide a reason for holding the ticket.
+                    </div>
+                    <div class="mb-3">
+                        <label for="hold_reason{{ ticket.id }}" class="form-label">Reason for Hold *</label>
+                        <textarea class="form-control" id="hold_reason{{ ticket.id }}" name="hold_reason" rows="3" placeholder="Please provide a reason for holding the ticket..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning" id="holdBtn{{ ticket.id }}">
+                        <i class="fas fa-hand-paper"></i> Hold Ticket
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const holdBtn = document.getElementById('holdBtn{{ ticket.id }}');
+    if (holdBtn) {
+        holdBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Hold button clicked for ticket {{ ticket.id }}');
+            
+            const form = document.getElementById('holdForm{{ ticket.id }}');
+            const reason = document.getElementById('hold_reason{{ ticket.id }}').value.trim();
+            
+            if (!reason) {
+                alert('Please provide a reason for holding the ticket.');
+                return;
+            }
+            
+            // Show processing state
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            this.disabled = true;
+            
+            // Submit the form
+            form.submit();
+        });
+    }
+});
+</script>
+{% endfor %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Search functionality
+    const searchField = document.getElementById('searchField');
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    const searchResults = document.getElementById('searchResults');
+    const searchResultsText = document.getElementById('searchResultsText');
+    const ticketsTable = document.getElementById('ticketsTable');
+    const ticketRows = document.querySelectorAll('.ticket-row');
+    const searchFilterIcon = document.getElementById('searchFilterIcon');
+    const searchFilterCollapse = document.getElementById('searchFilterCollapse');
+    
+    let allTickets = Array.from(ticketRows);
+    let filteredTickets = allTickets;
+    
+    // Handle collapse events for icon rotation
+    searchFilterCollapse.addEventListener('show.bs.collapse', function () {
+        searchFilterIcon.classList.add('rotated');
+    });
+    
+    searchFilterCollapse.addEventListener('hide.bs.collapse', function () {
+        searchFilterIcon.classList.remove('rotated');
+    });
+    
+    // Search function
+    function performSearch() {
+        const searchBy = searchField.value;
+        const searchTerm = searchInput.value.trim().toLowerCase();
+        
+        if (searchTerm === '') {
+            // Show all tickets if search is empty
+            filteredTickets = allTickets;
+        } else {
+            // Filter tickets based on search criteria
+            filteredTickets = allTickets.filter(function(row) {
+                const dataAttribute = 'data-' + searchBy.replace('_', '-');
+                const cellValue = row.getAttribute(dataAttribute) || '';
+                return cellValue.toLowerCase().includes(searchTerm);
+            });
+        }
+        
+        // Hide all rows first
+        allTickets.forEach(function(row) {
+            row.style.display = 'none';
+        });
+        
+        // Show filtered rows
+        filteredTickets.forEach(function(row) {
+            row.style.display = '';
+        });
+        
+        // Update search results display
+        if (searchTerm !== '') {
+            const searchFieldName = searchField.options[searchField.selectedIndex].text;
+            searchResultsText.textContent = `Found ${filteredTickets.length} result(s) for "${searchInput.value}" in ${searchFieldName}`;
+            searchResults.style.display = 'block';
+        } else {
+            searchResults.style.display = 'none';
+        }
+        
+        // Show/hide table based on results
+        if (filteredTickets.length === 0 && searchTerm !== '') {
+            ticketsTable.style.display = 'none';
+            // Show no results message
+            if (!document.getElementById('noResultsMessage')) {
+                const noResultsDiv = document.createElement('div');
+                noResultsDiv.id = 'noResultsMessage';
+                noResultsDiv.className = 'text-center py-5';
+                noResultsDiv.innerHTML = `
+                    <i class="fas fa-search fa-5x text-muted mb-3"></i>
+                    <h3 class="text-muted">No Results Found</h3>
+                    <p class="text-muted">No tickets found matching your search criteria.</p>
+                    <button type="button" class="btn btn-outline-primary" onclick="clearSearch()">
+                        <i class="fas fa-times"></i> Clear Search
+                    </button>
+                `;
+                ticketsTable.parentNode.insertBefore(noResultsDiv, ticketsTable.nextSibling);
+            }
+        } else {
+            ticketsTable.style.display = '';
+            const noResultsMsg = document.getElementById('noResultsMessage');
+            if (noResultsMsg) {
+                noResultsMsg.remove();
+            }
+        }
+    }
+    
+    // Clear search function
+    function clearSearch() {
+        searchInput.value = '';
+        searchResults.style.display = 'none';
+        filteredTickets = allTickets;
+        
+        // Show all tickets
+        allTickets.forEach(function(row) {
+            row.style.display = '';
+        });
+        
+        ticketsTable.style.display = '';
+        const noResultsMsg = document.getElementById('noResultsMessage');
+        if (noResultsMsg) {
+            noResultsMsg.remove();
+        }
+    }
+    
+    // Event listeners
+    searchBtn.addEventListener('click', performSearch);
+    clearSearchBtn.addEventListener('click', clearSearch);
+    
+    // Real-time search as user types
+    searchInput.addEventListener('input', function() {
+        // Debounce the search to avoid too many calls
+        clearTimeout(this.searchTimeout);
+        this.searchTimeout = setTimeout(performSearch, 300);
+    });
+    
+    // Search on Enter key
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            performSearch();
+        }
+    });
+    
+    // Make clearSearch function globally available
+    window.clearSearch = clearSearch;
+});
+</script>
+
+
+{% endblock %}
